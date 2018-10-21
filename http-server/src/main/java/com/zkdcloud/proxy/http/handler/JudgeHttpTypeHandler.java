@@ -2,7 +2,9 @@ package com.zkdcloud.proxy.http.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpRequest;
 
 /**
  * description
@@ -16,10 +18,16 @@ public class JudgeHttpTypeHandler  extends ChannelInboundHandlerAdapter {
         HTTPS
     }
 
+    private PROTOCOL protocol;
+    private boolean isFirst = true;
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if(msg instanceof HttpObject){
-            if()
+            if(msg instanceof HttpRequest && isFirst){
+                HttpRequest httpMsg = (HttpRequest) msg;
+                protocol = httpMsg.method() == HttpMethod.CONNECT ? PROTOCOL.HTTPS : PROTOCOL.HTTP;
+                isFirst = false;
+            }
         } else {
             super.channelRead(ctx,msg);
         }
