@@ -10,6 +10,6 @@ public class ChannelContext {
         HTTP,
         TUNNEL
     }
-    public static AttributeKey<PROTOCOL> HTTP_PROTOCOL = AttributeKey.valueOf("HTTP_PROTOCOL");
+    public static AttributeKey<PROTOCOL> TRANSPORT_PROTOCOL = AttributeKey.valueOf("TRANSPORT_PROTOCOL");
     public static AttributeKey<InetSocketAddress> DST_ADDRESS = AttributeKey.valueOf("DST_ADDRESS");
 }
