@@ -25,8 +25,8 @@ public class ServerStart {
      * static logger
      */
     private static Logger logger = LoggerFactory.getLogger(ServerStart.class);
-    private static NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
-    private static NioEventLoopGroup workGroup = new NioEventLoopGroup(1);
+    private static NioEventLoopGroup bossGroup = new NioEventLoopGroup();
+    private static NioEventLoopGroup workGroup = new NioEventLoopGroup();
 
     public static void main(String[] args) throws InterruptedException {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
