@@ -1,4 +1,4 @@
-## SOCKS5
+## SOCKS5 协议
 SOCKS5比SOCKS4a多了鉴定、IPv6、UDP支持。建立与SOCKS5服务器的TCP连接后客户端需要先发送请求来协议版本及认证方式，格式为（以字节为单位）：
 
 
