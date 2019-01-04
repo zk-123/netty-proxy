@@ -145,8 +145,10 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
                 }
             }
         } finally {
-            cumulation.clear();
-            cumulation = null;
+            if(cumulation != null){
+                cumulation.clear();
+                cumulation = null;
+            }
         }
 
     }
