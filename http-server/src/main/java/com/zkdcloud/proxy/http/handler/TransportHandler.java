@@ -5,7 +5,9 @@ import com.zkdcloud.proxy.http.util.ChannelUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.*;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +20,8 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
      * static logger
      */
     private static Logger logger = LoggerFactory.getLogger(TransportHandler.class);
+    private static EventLoopGroup connectExecutors = new NioEventLoopGroup(Math.min(Runtime.getRuntime().availableProcessors() + 1, 32),
+            new DefaultThreadFactory("connect-executors"));
 
     private Channel clientChannel;
     private Channel remoteChannel;
@@ -45,7 +49,7 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
         final ChannelFuture channelFuture;
         switch (protocol) {
             case HTTP:
-                channelFuture = ChannelUtil.connect(dstAddress, new HttpRequestEncoder(), DEFAULT_DATA_CHANGE);
+                channelFuture = ChannelUtil.connect(dstAddress, connectExecutors, new HttpRequestEncoder(), DEFAULT_DATA_CHANGE);
                 channelFuture.addListener(new ChannelFutureListener() {
                     public void operationComplete(ChannelFuture future) throws Exception {
                         if (future.isSuccess()) {
@@ -67,7 +71,7 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
                 });
                 break;
             case TUNNEL:
-                channelFuture = ChannelUtil.connect(dstAddress, DEFAULT_DATA_CHANGE);
+                channelFuture = ChannelUtil.connect(dstAddress, connectExecutors, DEFAULT_DATA_CHANGE);
                 channelFuture.addListener(new ChannelFutureListener() {
                     public void operationComplete(ChannelFuture future) throws Exception {
                         if (future.isSuccess()) {
