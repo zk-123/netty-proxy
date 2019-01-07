@@ -85,19 +85,6 @@ public class JudgeHttpTypeHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         ctx.channel().close();
-        if (logger.isDebugEnabled()) {
-            logger.debug("{} will be close : {}", ctx.channel().id(), cause.getMessage());
-        }
-    }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof IdleStateEvent) {
-            ctx.channel().close();
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("{} will be close", ctx.channel().id());
-            }
-        }
+        logger.error("{} happen error, will be close : {}", ctx.channel().id(), cause.getMessage());
     }
 }

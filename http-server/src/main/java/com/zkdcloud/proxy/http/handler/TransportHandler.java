@@ -3,7 +3,6 @@ package com.zkdcloud.proxy.http.handler;
 import com.zkdcloud.proxy.http.context.ChannelContext;
 import com.zkdcloud.proxy.http.util.ChannelUtil;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.*;
@@ -60,9 +59,7 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
 
                             //send cumulation httpObject
                             consumeAllObject();
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("type: http, channel {} is connect success. {}:{}", clientChannel.id(), dstAddress.getHostName(), dstAddress.getPort());
-                            }
+                            logger.info("type: http, channel {} is connect success. {}:{}", clientChannel.id(), dstAddress.getHostName(), dstAddress.getPort());
                         } else {
                             logger.error("{} fail connect: {}. {}:{}", clientChannel.id(), future.cause().getMessage(), dstAddress.getHostName(), dstAddress.getPort());
                             closeChannel();
@@ -85,9 +82,7 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
                                             clientChannel.pipeline().remove(HttpResponseEncoder.class);
                                         }
                                     });
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("type: tunnel, channel {} is connect success. {}:{}", clientChannel.id(), dstAddress.getHostName(), dstAddress.getPort());
-                            }
+                            logger.info("type: tunnel, channel {} is connect success. {}:{}", clientChannel.id(), dstAddress.getHostName(), dstAddress.getPort());
                         } else {
                             logger.error("{} fail connect: {}. {}:{}", clientChannel.id(), future.cause().getMessage(), dstAddress.getHostName(), dstAddress.getPort());
                             closeChannel();

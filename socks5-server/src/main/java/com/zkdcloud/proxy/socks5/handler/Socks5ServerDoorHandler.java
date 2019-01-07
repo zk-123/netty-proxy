@@ -5,14 +5,18 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.*;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handle the socks connection that comes in, complete the socks5 handshake
@@ -25,6 +29,8 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
      * static logger
      */
     private static Logger logger = LoggerFactory.getLogger(Socks5ServerDoorHandler.class);
+    private static EventLoopGroup connectExecutors = new NioEventLoopGroup(Math.min(Runtime.getRuntime().availableProcessors() + 1, 32),
+            new DefaultThreadFactory("connect-executors"));
 
     enum ACCSTATE {UN_INIT, UN_CONNECT, FINISHED}
 
@@ -49,14 +55,11 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
 
                     ctx.pipeline().addBefore(ctx.name(), "socks5-command", new Socks5CommandRequestDecoder());
                     this.state = ACCSTATE.UN_CONNECT;
-
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("{} init success", ctx.channel().id());
-                    }
+                    logger.info("{} init success", ctx.channel().id());
                 } else {
                     response = new DefaultSocks5InitialResponse(Socks5AuthMethod.UNACCEPTED);
                     ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-                    logger.error("{} init is not socks5InitRequest", ctx.channel().id());
+                    logger.warn("{} init is not socks5InitRequest", ctx.channel().id());
                 }
                 ReferenceCountUtil.release(msg);
                 break;
@@ -71,7 +74,7 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
                 } else {
                     ctx.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4))
                             .addListener(ChannelFutureListener.CLOSE);
-                    logger.error("{} is not a commanderRequest", ctx.channel().id());
+                    logger.warn("{} is not a commanderRequest", ctx.channel().id());
                 }
 
                 ReferenceCountUtil.release(msg);
@@ -85,21 +88,35 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
     private void buildLocalConnect(final InetSocketAddress dstAddress, final Channel clientChannel) {
         if (bootstrap == null) {
             bootstrap = new Bootstrap();
-            bootstrap.group(new NioEventLoopGroup(1))
+            bootstrap.group(connectExecutors)
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.SO_KEEPALIVE, true)
-                    .handler(new SimpleChannelInboundHandler<ByteBuf>() {
+                    .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-                            clientChannel.writeAndFlush(msg.retain());
-                        }
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, 30, TimeUnit.SECONDS) {
+                                        private Logger logger = LoggerFactory.getLogger("remote idle logger");
 
-                        @Override
-                        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("{} will be close", ctx.channel().id());
-                            }
-                            ctx.channel().close();
+                                        @Override
+                                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                                            if (evt instanceof IdleStateEvent) {
+                                                ctx.channel().close();
+                                                this.logger.warn("{} idle timeout, will be close", ctx.channel().id());
+                                            }
+                                        }
+                                    });
+                            ch.pipeline().addLast(new SimpleChannelInboundHandler<ByteBuf>() {
+                                @Override
+                                protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+                                    clientChannel.writeAndFlush(msg.retain());
+                                }
+
+                                @Override
+                                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                                    logger.error("{} happen error ,will be close", ctx.channel().id());
+                                    ctx.channel().close();
+                                }
+                            });
                         }
                     })
                     .connect(dstAddress)
@@ -112,9 +129,7 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
                                 clientChannel.pipeline().addLast("socks5-transfer", new TransferFlowHandler());
 
 
-                                if (logger.isDebugEnabled()) {
-                                    logger.debug("{} remote connect success", clientChannel.id());
-                                }
+                                logger.info("{} remote connect success", clientChannel.id());
                             } else {
                                 clientChannel.writeAndFlush(new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4))
                                         .addListener(ChannelFutureListener.CLOSE);
@@ -132,26 +147,14 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof IdleStateEvent) {
-            closeChannel();
-            if (logger.isDebugEnabled()) {
-                logger.debug("{} will be close", ctx.channel().id());
-            }
-        }
-    }
-
-    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         closeChannel();
-        if(logger.isDebugEnabled()){
-            logger.debug("{} will be close : {}", ctx.channel().id(),cause.getMessage());
-        }
+        logger.error("{} happen error, will be close : {}", ctx.channel().id(), cause.getMessage());
     }
 
     private void closeChannel() {
         //close client channel
-        if(clientChannel != null){
+        if (clientChannel != null) {
             //close remote channel
             Channel proxyChannel = clientChannel.attr(ChannelContextConst.PROXY_CHANNEL).get();
             if (proxyChannel != null) {

@@ -4,12 +4,14 @@ import com.zkdcloud.proxy.http.handler.JudgeHttpTypeHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
@@ -42,7 +44,16 @@ public class ServerStart {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         ch.pipeline()
-                                .addLast("idle", new IdleStateHandler(0, 0, 7, TimeUnit.MINUTES))
+                                .addFirst("idle", new IdleStateHandler(0, 0, 7, TimeUnit.MINUTES){
+                                    private Logger logger = LoggerFactory.getLogger("client idle logger");
+                                    @Override
+                                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                                        if (evt instanceof IdleStateEvent) {
+                                            ctx.channel().close();
+                                            this.logger.warn("{} idle timeout, will be close", ctx.channel().id());
+                                        }
+                                    }
+                                })
                                 .addFirst("http-decoder", new HttpRequestDecoder())
                                 .addLast("http-encoder", new HttpResponseEncoder())
                                 .addLast("http-init", new JudgeHttpTypeHandler());
