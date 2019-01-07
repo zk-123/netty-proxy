@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequestDecoder;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,8 @@ public class ServerStart {
      */
     private static Logger logger = LoggerFactory.getLogger(ServerStart.class);
     private static NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
-    private static NioEventLoopGroup workGroup = new NioEventLoopGroup(2);
+    private static NioEventLoopGroup workGroup = new NioEventLoopGroup(Math.min(Runtime.getRuntime().availableProcessors() + 1, 32),
+            new DefaultThreadFactory("proxy-workers"));
 
     public static void main(String[] args) throws InterruptedException {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
