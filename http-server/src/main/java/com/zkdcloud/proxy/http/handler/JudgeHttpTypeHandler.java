@@ -16,7 +16,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * description
+ * judge http type and finish handshake
  *
  * @author zk
  * @since 2018/10/21
