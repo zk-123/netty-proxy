@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +28,9 @@ public class ServerStart {
      * static logger
      */
     private static Logger logger = LoggerFactory.getLogger(ServerStart.class);
-    private static NioEventLoopGroup bossGroup = new NioEventLoopGroup();
-    private static NioEventLoopGroup workGroup = new NioEventLoopGroup(Math.min(Runtime.getRuntime().availableProcessors() + 1, 32));
+    private static NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
+    private static NioEventLoopGroup workGroup = new NioEventLoopGroup(Math.min(Runtime.getRuntime().availableProcessors() + 1, 32),
+            new DefaultThreadFactory("proxy-workers"));
 
     public static void main(String[] args) throws InterruptedException {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -40,7 +42,7 @@ public class ServerStart {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         ch.pipeline()
-                                .addLast("idle", new IdleStateHandler(0, 0, 7, TimeUnit.HOURS))
+                                .addLast("idle", new IdleStateHandler(0, 0, 7, TimeUnit.MINUTES))
                                 .addFirst("http-decoder", new HttpRequestDecoder())
                                 .addLast("http-encoder", new HttpResponseEncoder())
                                 .addLast("http-init", new JudgeHttpTypeHandler());
