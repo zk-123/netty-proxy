@@ -39,7 +39,7 @@ public class ServerStart {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         ch.pipeline()
-                                .addLast("idle", new IdleStateHandler(0, 0, 7, TimeUnit.SECONDS))
+                                .addLast("idle", new IdleStateHandler(0, 0, 7, TimeUnit.MINUTES))
                                 .addLast("socks5-init", new Socks5InitialRequestDecoder())
                                 .addLast("socks5-door", new Socks5ServerDoorHandler())
                                 .addLast(new Socks5ServerEncoder());
