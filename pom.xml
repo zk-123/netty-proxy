@@ -6,7 +6,7 @@
 
     <groupId>com.zkdcloud</groupId>
     <artifactId>netty-proxy</artifactId>
-    <version>1.0</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <modules>

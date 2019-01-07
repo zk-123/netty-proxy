@@ -5,17 +5,19 @@
     <parent>
         <artifactId>netty-proxy</artifactId>
         <groupId>com.zkdcloud</groupId>
-        <version>1.0</version>
+        <version>1.0.0</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
+    <modelVersion>4.0.0</modelVersion>
     <artifactId>http-server</artifactId>
+    <version>1.0.0</version>
 
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
+                    <finalName>http-proxy-${version}-release</finalName>
                     <archive>
                         <manifest>
                             <mainClass>com.zkdcloud.proxy.http.ServerStart</mainClass>
@@ -24,6 +26,7 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
                 <executions>
                     <execution>
