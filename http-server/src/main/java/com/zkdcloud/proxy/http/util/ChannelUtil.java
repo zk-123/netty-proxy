@@ -1,5 +1,6 @@
 package com.zkdcloud.proxy.http.util;
 
+import com.zkdcloud.proxy.http.ServerStart;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -19,7 +20,7 @@ public class ChannelUtil {
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<Channel>() {
                     protected void initChannel(Channel ch) throws Exception {
-                        ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, 30, TimeUnit.SECONDS){
+                        ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, ServerStart.serverConfigure.getSecondsRemoteIdle(), TimeUnit.SECONDS){
                                     private Logger logger = LoggerFactory.getLogger("remote idle logger");
                                     @Override
                                     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
