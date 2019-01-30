@@ -60,7 +60,7 @@ public class ServerStart {
                     }
                 });
         int port = args != null && args.length >= 1 ? Integer.parseInt(args[0]) : 1081;
-        logger.info("socks5 server start at : : {}", port);
+        logger.info("http server start at : : {}", port);
 
         serverBootstrap.bind(port).sync().channel().closeFuture().sync();
     }
