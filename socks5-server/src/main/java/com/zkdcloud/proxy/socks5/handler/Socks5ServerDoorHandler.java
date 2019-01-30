@@ -1,5 +1,6 @@
 package com.zkdcloud.proxy.socks5.handler;
 
+import com.zkdcloud.proxy.socks5.ServerStart;
 import com.zkdcloud.proxy.socks5.context.ChannelContextConst;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -94,7 +95,7 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, 30, TimeUnit.SECONDS) {
+                            ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, ServerStart.serverConfigure.getSecondsRemoteIdle(), TimeUnit.SECONDS) {
                                         private Logger logger = LoggerFactory.getLogger("remote idle logger");
 
                                         @Override

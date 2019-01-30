@@ -1,4 +1,4 @@
-package com.zkdcloud.proxy.http.util;
+package com.zkdcloud.proxy.socks5.config;
 
 /**
  * server config

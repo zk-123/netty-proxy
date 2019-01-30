@@ -1,7 +1,7 @@
 package com.zkdcloud.proxy.http;
 
 import com.zkdcloud.proxy.http.handler.JudgeHttpTypeHandler;
-import com.zkdcloud.proxy.http.util.ServerConfigure;
+import com.zkdcloud.proxy.http.config.ServerConfigure;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
