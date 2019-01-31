@@ -49,16 +49,7 @@ public class ServerStart {
                     @Override
                     protected void initChannel(Channel ch) throws Exception {
                         ch.pipeline()
-                                .addFirst("idle", new IdleStateHandler(0, 0, serverConfigure.getSecondsClientIdle(), TimeUnit.SECONDS){
-                                    private Logger logger = LoggerFactory.getLogger("client idle logger");
-                                    @Override
-                                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                                        if (evt instanceof IdleStateEvent) {
-                                            ctx.channel().close();
-                                            this.logger.warn("{} idle timeout, will be close", ctx.channel().id());
-                                        }
-                                    }
-                                })
+                                .addFirst("idle", new IdleStateHandler(0, 0, serverConfigure.getSecondsClientIdle(), TimeUnit.SECONDS))
                                 .addLast("socks5-init", new Socks5InitialRequestDecoder())
                                 .addLast("socks5-door", new Socks5ServerDoorHandler())
                                 .addLast(new Socks5ServerEncoder());

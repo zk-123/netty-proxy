@@ -95,18 +95,10 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
                     .handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, ServerStart.serverConfigure.getSecondsRemoteIdle(), TimeUnit.SECONDS) {
-                                        private Logger logger = LoggerFactory.getLogger("remote idle logger");
-
-                                        @Override
-                                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                                            if (evt instanceof IdleStateEvent) {
-                                                ctx.channel().close();
-                                                this.logger.warn("{} idle timeout, will be close", ctx.channel().id());
-                                            }
-                                        }
-                                    });
+                            ch.pipeline().addFirst("idle", new IdleStateHandler(0, 0, ServerStart.serverConfigure.getSecondsRemoteIdle(), TimeUnit.SECONDS));
                             ch.pipeline().addLast(new SimpleChannelInboundHandler<ByteBuf>() {
+                                private Logger logger = LoggerFactory.getLogger("remote recv handler");
+
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
                                     clientChannel.writeAndFlush(msg.retain());
@@ -116,6 +108,14 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
                                 public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
                                     logger.error("{} happen error ,will be close", ctx.channel().id());
                                     ctx.channel().close();
+                                }
+
+                                @Override
+                                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                                    if (evt instanceof IdleStateEvent) {
+                                        ctx.channel().close();
+                                        this.logger.warn("{} idle timeout, will be close", ctx.channel().id());
+                                    }
                                 }
                             });
                         }
@@ -151,6 +151,14 @@ public class Socks5ServerDoorHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         closeChannel();
         logger.error("{} happen error, will be close : {}", ctx.channel().id(), cause.getMessage());
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            ctx.channel().close();
+            logger.warn("{} idle timeout, will be close", ctx.channel().id());
+        }
     }
 
     private void closeChannel() {

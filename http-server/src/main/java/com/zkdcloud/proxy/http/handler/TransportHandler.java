@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +28,18 @@ public class TransportHandler extends ChannelInboundHandlerAdapter {
     private List<HttpObject> cumulation;
 
     private ChannelInboundHandlerAdapter DEFAULT_DATA_CHANGE = new ChannelInboundHandlerAdapter() {
+        private Logger logger = LoggerFactory.getLogger("default dataChange handler");
+
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             clientChannel.writeAndFlush(msg);
+        }
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            if (evt instanceof IdleStateEvent) {
+                ctx.channel().close();
+                this.logger.warn("{} idle timeout, will be close", ctx.channel().id());
+            }
         }
     };
 
