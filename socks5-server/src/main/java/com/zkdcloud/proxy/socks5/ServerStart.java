@@ -9,6 +9,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler;
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequestDecoder;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -50,7 +51,7 @@ public class ServerStart {
                     protected void initChannel(Channel ch) throws Exception {
                         ch.pipeline()
                                 .addFirst("idle", new IdleStateHandler(0, 0, serverConfigure.getSecondsClientIdle(), TimeUnit.SECONDS))
-                                .addLast("socks5-init", new Socks5InitialRequestDecoder())
+                                .addLast("socks5-init", new SocksPortUnificationServerHandler())
                                 .addLast("socks5-door", new Socks5ServerDoorHandler())
                                 .addLast(new Socks5ServerEncoder());
                     }
