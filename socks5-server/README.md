@@ -1,1 +1,1 @@
-> move to https://github.com/zk-123/socks5-server
+move to https://github.com/zk-123/socks5-server
