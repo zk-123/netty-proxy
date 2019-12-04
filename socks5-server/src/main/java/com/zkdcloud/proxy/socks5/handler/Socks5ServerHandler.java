@@ -6,8 +6,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.socksx.SocksMessage;
 import io.netty.handler.codec.socksx.v5.*;
 
+import static com.zkdcloud.proxy.socks5.ServerStart.serverConfigure;
+
 /**
- * description
+ * add all kinds of channel
  *
  * @author zk
  * @since 2019/11/29
@@ -19,14 +21,25 @@ public class Socks5ServerHandler extends SimpleChannelInboundHandler<SocksMessag
         switch (socksRequest.version()) {
             case SOCKS5:
                 if (socksRequest instanceof Socks5InitialRequest) {
-                    // auth support example
-                    //ctx.pipeline().addFirst(new Socks5PasswordAuthRequestDecoder());
-                    //ctx.write(new DefaultSocks5AuthMethodResponse(Socks5AuthMethod.PASSWORD));
-                    ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                    ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
+                    // auth
+                    if (enableAuth()) {
+                        ctx.pipeline().addAfter("client-idle", "client-auth-decoder", new Socks5PasswordAuthRequestDecoder());
+                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.PASSWORD));
+                    } else {
+                        ctx.pipeline().addAfter("client-idle", "client-socks5-command-decoder", new Socks5CommandRequestDecoder());
+                        ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH));
+                    }
                 } else if (socksRequest instanceof Socks5PasswordAuthRequest) {
-                    ctx.pipeline().addFirst(new Socks5CommandRequestDecoder());
-                    ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
+                    Socks5PasswordAuthRequest passwordAuthRequest = (Socks5PasswordAuthRequest) socksRequest;
+                    if (passwordAuthRequest.username().equals(serverConfigure.getAuthUsername()) &&
+                            passwordAuthRequest.password().equals(serverConfigure.getAuthPassword())) {
+                        ctx.pipeline().remove(Socks5PasswordAuthRequestDecoder.class);
+                        ctx.pipeline().addAfter("client-idle", "client-socks5-command-decoder", new Socks5CommandRequestDecoder());
+                        ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.SUCCESS));
+                    } else {
+                        ctx.write(new DefaultSocks5PasswordAuthResponse(Socks5PasswordAuthStatus.FAILURE));
+                        SocksServerUtils.closeOnFlush(ctx.channel());
+                    }
                 } else if (socksRequest instanceof Socks5CommandRequest) {
                     Socks5CommandRequest socks5CmdRequest = (Socks5CommandRequest) socksRequest;
                     if (socks5CmdRequest.type() == Socks5CommandType.CONNECT) {
@@ -56,5 +69,10 @@ public class Socks5ServerHandler extends SimpleChannelInboundHandler<SocksMessag
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
         throwable.printStackTrace();
         SocksServerUtils.closeOnFlush(ctx.channel());
+    }
+
+    private boolean enableAuth() {
+        return serverConfigure.getAuthUsername() != null && !"".equals(serverConfigure.getAuthUsername()) &&
+                serverConfigure.getAuthPassword() != null && !"".equals(serverConfigure.getAuthPassword());
     }
 }

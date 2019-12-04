@@ -3,8 +3,6 @@ package com.zkdcloud.proxy.socks5.context;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 
-import java.net.InetSocketAddress;
-
 /**
  * contextConst
  *
@@ -13,11 +11,11 @@ import java.net.InetSocketAddress;
  */
 public class ChannelContextConst {
     /**
-     * dst address
+     * serverConfig
      */
-    public static AttributeKey<InetSocketAddress> DST_ADDRESS = AttributeKey.valueOf("dstAddress");
+    public static AttributeKey<Channel> REMOTE_CHANNEL = AttributeKey.valueOf("remoteChannel");
     /**
-     * proxy channel
+     * clientConfig
      */
-    public static AttributeKey<Channel> PROXY_CHANNEL = AttributeKey.valueOf("proxyChannel");
+    public static AttributeKey<Channel> CLIENT_CHANNEL = AttributeKey.valueOf("clientChannel");
 }

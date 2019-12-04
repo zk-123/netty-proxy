@@ -8,7 +8,7 @@
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <Target>System.out</Target>
         <encoder>
-            <pattern>%-5p [%d][%mdc{mdc_accNo}] %C:%L - %m %n</pattern>
+            <pattern>%m %n</pattern>
             <charset>utf-8</charset>
         </encoder>
     </appender>
